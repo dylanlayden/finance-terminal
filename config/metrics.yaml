@@ -59,18 +59,19 @@ metrics:
     change_style: pct
     source_url: https://fred.stlouisfed.org/series/DHHNGSP
 
-  # NOTE: FRED's LBMA gold series was discontinued over licensing — it still
-  # returns data, it just stops years ago. Phase 5 must verify liveness and
-  # swap to the Stooq fallback if the last as_of is stale. See SOURCES.md.
+  # FRED's LBMA gold series (GOLDAMGBD228NLBM) is discontinued and now 400s.
+  # Swapped to Pax Gold on Coinbase: 1 PAXG is backed 1:1 by a troy ounce of
+  # physical gold and trades within a fraction of a percent of LBMA spot —
+  # a keyless daily $/oz proxy. See SOURCES.md.
   - id: gold
     dashboard: commodities
     label: Gold
-    source: fred
-    series_id: GOLDAMGBD228NLBM
+    source: coinbase
+    series_id: PAXG-USD
     unit: $/oz
     frequency: daily
     change_style: pct
-    source_url: https://fred.stlouisfed.org/series/GOLDAMGBD228NLBM
+    source_url: https://www.coinbase.com/price/pax-gold
 
   # Reverted to the spec's monthly IMF series: Stooq (the daily proxy) now
   # gates its CSV behind a JS proof-of-work challenge. See SOURCES.md.
