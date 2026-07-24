@@ -1,7 +1,7 @@
 # Terminal — metric registry
 #
 # Adding a metric = one row here + (if the source is new) one fetcher in
-# src/terminal/fetchers/. Nothing else. See README.md.
+# terminal/fetchers/. Nothing else. See README.md.
 #
 # Fields
 #   id            unique slug; also the data filename (/data/<id>.csv)
@@ -9,7 +9,7 @@
 #   label         what shows on the tile
 #   source        which fetcher handles it
 #   series_id     source-specific handle
-#   unit          drives number formatting (see src/terminal/formatting.py)
+#   unit          drives number formatting (see terminal/formatting.py)
 #   frequency     daily | weekly | monthly | quarterly — drives staleness + sparkline window
 #   change_style  pct | pp | bps — how "change vs previous" is rendered
 #   source_url    tap-through on the tile to the original series
@@ -71,23 +71,18 @@ metrics:
     frequency: daily
     change_style: pct
     source_url: https://fred.stlouisfed.org/series/GOLDAMGBD228NLBM
-    fallback:
-      source: stooq
-      series_id: xauusd
 
-  # Daily COMEX futures, quoted in $/lb (~4.35), NOT the IMF monthly $/mt (~9600).
+  # Reverted to the spec's monthly IMF series: Stooq (the daily proxy) now
+  # gates its CSV behind a JS proof-of-work challenge. See SOURCES.md.
   - id: copper
     dashboard: commodities
-    label: Copper (COMEX)
-    source: stooq
-    series_id: hg.f
-    unit: $/lb
-    frequency: daily
+    label: Copper (global)
+    source: fred
+    series_id: PCOPPUSDM
+    unit: $/mt
+    frequency: monthly
     change_style: pct
-    source_url: https://stooq.com/q/?s=hg.f
-    fallback:
-      source: fred
-      series_id: PCOPPUSDM
+    source_url: https://fred.stlouisfed.org/series/PCOPPUSDM
 
   - id: gasoline_retail
     dashboard: commodities
@@ -120,15 +115,17 @@ metrics:
     change_style: pct
     source_url: https://www.zillow.com/research/data/
 
+  # FHFA's own CSV endpoints 404 after their site restructure; FRED mirrors
+  # the same purchase-only index, monthly rather than quarterly.
   - id: fhfa_hpi
     dashboard: real_estate
     label: FHFA House Price Index
-    source: fhfa
-    series_id: hpi_us_purchase_only_sa
+    source: fred
+    series_id: HPIPONM226S
     unit: index
-    frequency: quarterly
+    frequency: monthly
     change_style: pct
-    source_url: https://www.fhfa.gov/data/hpi
+    source_url: https://fred.stlouisfed.org/series/HPIPONM226S
 
   - id: mortgage_30yr
     dashboard: real_estate
@@ -238,22 +235,22 @@ metrics:
   - id: sp500
     dashboard: equities
     label: S&P 500
-    source: stooq
-    series_id: ^spx
+    source: fred
+    series_id: SP500
     unit: index
     frequency: daily
     change_style: pct
-    source_url: https://stooq.com/q/?s=%5Espx
+    source_url: https://fred.stlouisfed.org/series/SP500
 
   - id: nasdaq100
     dashboard: equities
     label: Nasdaq 100
-    source: stooq
-    series_id: ^ndx
+    source: fred
+    series_id: NASDAQ100
     unit: index
     frequency: daily
     change_style: pct
-    source_url: https://stooq.com/q/?s=%5Endx
+    source_url: https://fred.stlouisfed.org/series/NASDAQ100
 
   # FRED VIXCLS rather than scraping Stooq: same API key, cleaner history.
   - id: vix
@@ -266,8 +263,8 @@ metrics:
     change_style: pct
     source_url: https://fred.stlouisfed.org/series/VIXCLS
     fallback:
-      source: stooq
-      series_id: ^vix
+      source: cboe
+      series_id: vix_history
 
   # Knowingly fragile: no API, no FRED mirror, scraped from files that change
   # format and block cloud IPs. When it breaks, this tile alone goes stale.
@@ -281,21 +278,20 @@ metrics:
     change_style: pct
     source_url: https://www.cboe.com/us/options/market_statistics/
 
-# Placeholder tickers — edit freely, this is config, not code.
-# Stooq symbol conventions: US equities are <ticker>.us, crypto is <pair>.
+# Watchlist — REDUCED IN V1, NEEDS A DECISION. See SOURCES.md.
+# Stooq was the free keyless source for individual tickers; it now gates its
+# CSV behind a JS proof-of-work challenge. Every remaining free equity feed
+# (Finnhub, Alpha Vantage, Tiingo, Twelve Data) needs a signup Dylan has to
+# do. Crypto survives because Coinbase's public API is keyless.
 watchlist:
   dashboard: equities
-  source: stooq
+  source: coinbase
   unit: price
   frequency: daily
   change_style: pct
   tickers:
-    - {id: spy, label: SPY, series_id: spy.us}
-    - {id: qqq, label: QQQ, series_id: qqq.us}
-    - {id: aapl, label: AAPL, series_id: aapl.us}
-    - {id: nvda, label: NVDA, series_id: nvda.us}
-    - {id: msft, label: MSFT, series_id: msft.us}
-    - {id: btcusd, label: BTC-USD, series_id: btcusd}
+    - {id: btcusd, label: BTC-USD, series_id: BTC-USD}
+    - {id: ethusd, label: ETH-USD, series_id: ETH-USD}
 
 settings:
   history_floor: "1990-01-01"

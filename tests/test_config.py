@@ -93,8 +93,20 @@ class TestRealRegistry:
 
     def test_watchlist_expands_to_individual_metrics(self) -> None:
         watch = [m for m in registry().metrics if m.id.startswith("watch_")]
-        assert len(watch) == 6
+        assert len(watch) >= 1
         assert all(m.dashboard == "equities" for m in watch)
+
+    def test_every_source_has_a_fetcher(self) -> None:
+        """A metrics.yaml row naming a source nobody implements is a silent
+        no-op tile. Catch it here, not in production."""
+        from terminal.fetchers import load_all, registered_sources
+
+        load_all()
+        available = set(registered_sources())
+        for m in registry().metrics:
+            assert m.source in available, f"{m.id} names unimplemented source {m.source!r}"
+            if m.fallback:
+                assert m.fallback.source in available, f"{m.id} fallback {m.fallback.source!r}"
 
     def test_data_paths_are_one_file_per_metric(self) -> None:
         paths = {m.data_path.name for m in registry().metrics}

@@ -156,6 +156,12 @@ def _build_metric(raw: dict, dashboard_ids: set[str]) -> Metric:
     )
 
 
+def _watchlist_url(source: str, series_id: str) -> str:
+    if source == "coinbase":
+        return f"https://www.coinbase.com/price/{series_id.split('-')[0].lower()}"
+    return f"https://fred.stlouisfed.org/series/{series_id}"
+
+
 def _expand_watchlist(raw: dict, dashboard_ids: set[str]) -> list[Metric]:
     """The watchlist block is config sugar: N tickers -> N ordinary metrics."""
     if not raw:
@@ -171,7 +177,8 @@ def _expand_watchlist(raw: dict, dashboard_ids: set[str]) -> list[Metric]:
                 "unit": raw["unit"],
                 "frequency": raw["frequency"],
                 "change_style": raw["change_style"],
-                "source_url": f"https://stooq.com/q/?s={ticker['series_id']}",
+                "source_url": ticker.get("source_url")
+                or _watchlist_url(raw["source"], ticker["series_id"]),
             },
             dashboard_ids,
         )
