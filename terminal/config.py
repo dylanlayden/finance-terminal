@@ -27,12 +27,18 @@ VALID_FREQUENCIES: set[str] = {"daily", "weekly", "monthly", "quarterly"}
 VALID_CHANGE_STYLES: set[str] = {"pct", "pp", "bps"}
 VALID_TRANSFORMS: set[str] = {"yoy", "qoq_annualized"}
 
-# Nominal days between readings — drives per-tile staleness (D12).
-FREQUENCY_DAYS: dict[str, int] = {
-    "daily": 1,
-    "weekly": 7,
-    "monthly": 31,
-    "quarterly": 92,
+# Per-tile "stale" means the SOURCE has gone silent — not that FRED publishes
+# with a lag. FRED dates observations by period and releases late (daily oil
+# ~4 days behind, the broad-dollar index ~1 week, quarterly GDP is dated by
+# quarter-start so its freshest reading is routinely ~200 days "old"). These
+# thresholds sit comfortably past normal lag, so the flag only fires when a
+# source actually dies — like gold did. The global banner (days since last
+# successful run) remains the fast dead-man's switch (D12).
+STALE_AFTER_DAYS: dict[str, int] = {
+    "daily": 10,
+    "weekly": 20,
+    "monthly": 80,
+    "quarterly": 280,
 }
 
 
@@ -78,13 +84,13 @@ class Dashboard:
 class Settings:
     history_floor: date
     sparkline_years: dict[str, int]
-    stale_multiplier: float
+    stale_days: dict[str, int]
 
     def sparkline_window_years(self, frequency: str) -> int:
         return self.sparkline_years[frequency]
 
     def stale_after_days(self, frequency: str) -> float:
-        return FREQUENCY_DAYS[frequency] * self.stale_multiplier
+        return self.stale_days[frequency]
 
 
 @dataclass(frozen=True)
@@ -211,11 +217,15 @@ def load_registry(path: Path | None = None) -> Registry:
         sparkline_years=settings_raw.get(
             "sparkline_years", {"daily": 1, "weekly": 1, "monthly": 3, "quarterly": 5}
         ),
-        stale_multiplier=float(settings_raw.get("stale_multiplier", 2.0)),
+        stale_days=settings_raw.get("stale_days", dict(STALE_AFTER_DAYS)),
     )
-    missing = VALID_FREQUENCIES - set(settings.sparkline_years)
-    if missing:
-        raise ConfigError(f"settings.sparkline_years missing: {sorted(missing)}")
+    for field_name, values in (
+        ("sparkline_years", settings.sparkline_years),
+        ("stale_days", settings.stale_days),
+    ):
+        missing = VALID_FREQUENCIES - set(values)
+        if missing:
+            raise ConfigError(f"settings.{field_name} missing: {sorted(missing)}")
 
     # Dashboard order, and metric order within a dashboard, follow the yaml (D18).
     dashboards = [

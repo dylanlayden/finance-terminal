@@ -26,7 +26,7 @@ metrics:
 settings:
   history_floor: "1990-01-01"
   sparkline_years: {daily: 1, weekly: 1, monthly: 3, quarterly: 5}
-  stale_multiplier: 2.0
+  stale_days: {daily: 10, weekly: 20, monthly: 80, quarterly: 280}
 """
 
 
@@ -41,6 +41,16 @@ def test_loads_valid_config(tmp_path: Path) -> None:
     assert [d.id for d in reg.dashboards] == ["macro"]
     assert reg.metric("treasury_10yr").change_style == "pp"
     assert reg.settings.history_floor.year == 1990
+    assert reg.settings.stale_after_days("daily") == 10
+
+
+def test_rejects_incomplete_stale_days(tmp_path: Path) -> None:
+    body = VALID.replace(
+        "stale_days: {daily: 10, weekly: 20, monthly: 80, quarterly: 280}",
+        "stale_days: {daily: 10}",
+    )
+    with pytest.raises(ConfigError, match="stale_days missing"):
+        load_registry(write(tmp_path, body))
 
 
 def test_rejects_unknown_dashboard(tmp_path: Path) -> None:

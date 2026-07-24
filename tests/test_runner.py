@@ -36,7 +36,7 @@ def make_registry(metrics: list[Metric]) -> Registry:
         settings=Settings(
             history_floor=date(1990, 1, 1),
             sparkline_years={"daily": 1, "weekly": 1, "monthly": 3, "quarterly": 5},
-            stale_multiplier=2.0,
+            stale_days={"daily": 10, "weekly": 20, "monthly": 80, "quarterly": 280},
         ),
     )
 

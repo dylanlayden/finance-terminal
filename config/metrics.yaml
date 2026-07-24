@@ -117,14 +117,16 @@ metrics:
     source_url: https://www.zillow.com/research/data/
 
   # FHFA's own CSV endpoints 404 after their site restructure; FRED mirrors
-  # the same purchase-only index, monthly rather than quarterly.
+  # the same purchase-only index. Nominally monthly, but it publishes ~4
+  # months in arrears, so it's classed quarterly for staleness/sparkline —
+  # otherwise its normal lag reads as a dead source.
   - id: fhfa_hpi
     dashboard: real_estate
     label: FHFA House Price Index
     source: fred
     series_id: HPIPONM226S
     unit: index
-    frequency: monthly
+    frequency: quarterly
     change_style: pct
     source_url: https://fred.stlouisfed.org/series/HPIPONM226S
 
@@ -302,6 +304,12 @@ settings:
     weekly: 1
     monthly: 3
     quarterly: 5
-  # A tile is flagged stale when its as_of exceeds this multiple of its
-  # expected cadence (D12) — so a 25-day-old CPI reading stays healthy.
-  stale_multiplier: 2.0
+  # A tile is flagged stale only when its freshest reading is older than this
+  # many days — set past each frequency's normal FRED publication lag, so the
+  # flag means the source actually died (like gold), not that FRED published
+  # late. The global "N days old" banner is the fast dead-man's switch (D12).
+  stale_days:
+    daily: 10
+    weekly: 20
+    monthly: 80
+    quarterly: 280
