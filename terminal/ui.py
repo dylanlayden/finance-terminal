@@ -129,18 +129,26 @@ def _tile_html(reading: Reading, *, compact: bool) -> str:
     """
 
 
+def _render_chart(reading: Reading, years: int) -> None:
+    """Full-height history chart, dated x-axis + hover — behind a click (B)."""
+    window = sparkline_frame(reading, years)
+    if len(window) <= 1:
+        st.caption("Not enough history yet — the chart fills in as data collects.")
+        return
+    st.line_chart(
+        window.set_index("as_of")["value"],
+        height=220,
+        color="#3d7f9e",
+    )
+
+
 def render_tile(reading: Reading, sparkline_years: int, *, compact: bool = False) -> None:
     st.markdown(_tile_html(reading, compact=compact), unsafe_allow_html=True)
-    if compact or not reading.has_data:
+    if not reading.has_data:
         return
-    window = sparkline_frame(reading, sparkline_years)
-    if len(window) > 1:
-        st.line_chart(
-            window.set_index("as_of")["value"],
-            height=70,
-            color="#3d7f9e",
-        )
-        st.caption(sparkline_label(reading.metric.frequency, sparkline_years))
+    span = sparkline_label(reading.metric.frequency, sparkline_years)
+    with st.expander(f"chart · {span}"):
+        _render_chart(reading, sparkline_years)
 
 
 def render_grid(
