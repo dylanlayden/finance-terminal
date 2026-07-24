@@ -38,13 +38,34 @@ def api_key() -> str:
         if KEY_PATTERN.match(key):
             return key
         raise FetchError(
-            f"{var} is set but is not a valid FRED key: expected 32 lowercase "
-            f"alphanumeric characters, got {len(key)} chars"
-            + (" (contains uppercase)" if key.lower() != key else "")
-            + (" (contains non-alphanumeric)" if not key.isalnum() else "")
-            + (f" (raw value had {len(raw) - len(key)} chars of whitespace)" if raw != key else "")
+            f"{var} is set but is not a valid FRED key "
+            f"(expected 32 lowercase alphanumeric chars): {_diagnose(raw, key)}. "
+            "A FRED key is the bare 32-char string only — no URL, no 'api_key=', no quotes."
         )
     raise FetchError(f"no FRED API key found in any of {KEY_ENV_VARS}")
+
+
+def _diagnose(raw: str, key: str) -> str:
+    """Characterise a bad key WITHOUT revealing it — the value is a secret."""
+    clues = [f"got {len(key)} chars"]
+    lowered = key.lower()
+    if lowered.startswith(("http://", "https://")):
+        clues.append("looks like a URL")
+    if "api_key=" in lowered:
+        clues.append("contains 'api_key=' — you pasted the whole query string")
+    if "=" in key:
+        clues.append("contains '='")
+    if "&" in key or "?" in key:
+        clues.append("contains URL punctuation (?/&)")
+    if raw != key:
+        clues.append("has surrounding whitespace/newlines")
+    if any(c in key for c in "\"'`"):
+        clues.append("contains quote characters")
+    if key.lower() != key and key.isalnum():
+        clues.append("contains uppercase")
+    if not key.isalnum() and "=" not in key:
+        clues.append("contains non-alphanumeric characters")
+    return "; ".join(clues)
 
 
 @register("fred")
