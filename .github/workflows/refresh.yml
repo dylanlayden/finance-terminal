@@ -40,11 +40,13 @@ jobs:
         run: |
           git config user.name "terminal-bot"
           git config user.email "actions@github.com"
-          if git diff --quiet -- data/; then
+          # Stage first: `git diff` alone ignores untracked files, so a run
+          # that creates a metric's very first CSV would look like a no-op.
+          git add data/
+          if git diff --cached --quiet; then
             echo "no data changes"
             exit 0
           fi
-          git add data/
           git commit -m "data: refresh $(date -u +%Y-%m-%d)"
           # Rebase before pushing: a manual dispatch and the cron can race.
           git pull --rebase --autostash origin main
