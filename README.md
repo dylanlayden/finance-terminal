@@ -42,9 +42,15 @@ pytest -q && ruff check .
 1. Add one row to `config/metrics.yaml`.
 2. If it needs a source that doesn't exist yet, add one fetcher under `terminal/fetchers/`.
 
-That's the whole contract, and `tests/test_config.py` enforces it. Required fields: `id`, `dashboard`, `label`, `source`, `series_id`, `unit`, `frequency`, `change_style`, `source_url`. A malformed row fails the tests loudly rather than rendering an empty tile.
+That's the whole contract, and the tests enforce it. Required fields: `id`, `dashboard`, `label`, `source`, `series_id`, `unit`, `frequency`, `change_style`, `source_url`. A malformed row fails the tests loudly rather than rendering an empty tile, and `test_config.py::test_every_source_has_a_fetcher` fails if a row names a source nobody implemented.
 
 `unit` drives number formatting. `frequency` drives both the staleness threshold and the sparkline window. `change_style` decides whether change reads as `%`, `pp`, or `bps` — **any metric whose unit is `%` must use `pp`**, or a yield moving 4.10 → 4.28 renders as a misleading "+4.4%". There's a test for exactly that.
+
+## Writing a fetcher
+
+A fetcher is a function decorated with `@register("name")` that takes a `Metric` and returns a `list[(date, value)]` — the metric's full history. It may raise anything; the runner catches per-metric. Import the module in `terminal/fetchers/__init__.py::load_all` so the decorator runs. Add a fixture-based parsing test in `tests/test_fetchers.py` — **tests never hit the network**.
+
+Sources wired today: `fred` (needs the key), `zillow`, `cboe`, `coinbase` (all keyless). See `SOURCES.md` for why Stooq and FHFA's own site are *not* among them.
 
 ## Design decisions worth knowing
 
