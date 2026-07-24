@@ -1,6 +1,10 @@
 # Terminal
 
-A private, phone-friendly board of ~29 personal finance metrics across four dashboards, refreshed once a day from free public sources.
+A phone-friendly board of ~29 personal finance metrics across four dashboards, refreshed once a day from free public sources.
+
+**Live:** https://finance-terminal-cjpwyl4cvpwojgndo766gc.streamlit.app/
+
+The repo is public and the app is reachable by anyone with the URL. That was deliberate: Streamlit Community Cloud's private-app path requires granting their OAuth app the `repo` scope, which is read/write across *every* private repo on the account — far broader than this project needs. Since the app contains only public market data and no personal information, an unlisted public URL leaks nothing. The unguessable subdomain is the obscurity. **Nothing personal or secret belongs in this repo.**
 
 Two decoupled halves. A scheduled GitHub Action fetches data and commits it to `/data`; the Streamlit app only ever *reads* those files. The app never makes a network call to a data source, so a cold start is just a file read.
 
@@ -52,4 +56,8 @@ That's the whole contract, and `tests/test_config.py` enforces it. Required fiel
 
 ## Secrets
 
-`FRED_API_KEY` — free from [fred.stlouisfed.org](https://fredaccount.stlouisfed.org/apikeys). Lives in GitHub Actions secrets, and in a gitignored `.env` for local runs. It is never needed by the app itself, only by the refresh job, so the deployed Streamlit app holds no secrets at all.
+`FRED_API` — free from [fred.stlouisfed.org](https://fredaccount.stlouisfed.org/apikeys). Lives in GitHub Actions secrets, and in a gitignored `.env` for local runs.
+
+Note the name is `FRED_API`, **not** `FRED_API_KEY` — that's just how it got saved, and renaming would mean re-pasting the key for no benefit. The fetcher reads `FRED_API`.
+
+The key is never needed by the app itself, only by the refresh job, so the deployed Streamlit app holds no secrets at all — its secrets box is empty and should stay that way.
