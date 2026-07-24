@@ -1,0 +1,310 @@
+# Terminal — metric registry
+#
+# Adding a metric = one row here + (if the source is new) one fetcher in
+# src/terminal/fetchers/. Nothing else. See README.md.
+#
+# Fields
+#   id            unique slug; also the data filename (/data/<id>.csv)
+#   dashboard     commodities | real_estate | macro | equities
+#   label         what shows on the tile
+#   source        which fetcher handles it
+#   series_id     source-specific handle
+#   unit          drives number formatting (see src/terminal/formatting.py)
+#   frequency     daily | weekly | monthly | quarterly — drives staleness + sparkline window
+#   change_style  pct | pp | bps — how "change vs previous" is rendered
+#   source_url    tap-through on the tile to the original series
+#   transform     (optional) yoy | qoq_annualized — computed from the raw series
+#   fallback      (optional) source/series to try when the primary fails
+#   format        (optional) override the unit-inferred format
+
+dashboards:
+  - id: commodities
+    label: Commodities
+  - id: real_estate
+    label: Real Estate
+  - id: macro
+    label: Macro
+  - id: equities
+    label: Equities & Options
+
+metrics:
+  # --- Commodities ---------------------------------------------------------
+  - id: wti_crude
+    dashboard: commodities
+    label: WTI Crude
+    source: fred
+    series_id: DCOILWTICO
+    unit: $/bbl
+    frequency: daily
+    change_style: pct
+    source_url: https://fred.stlouisfed.org/series/DCOILWTICO
+
+  - id: brent_crude
+    dashboard: commodities
+    label: Brent Crude
+    source: fred
+    series_id: DCOILBRENTEU
+    unit: $/bbl
+    frequency: daily
+    change_style: pct
+    source_url: https://fred.stlouisfed.org/series/DCOILBRENTEU
+
+  - id: henry_hub_gas
+    dashboard: commodities
+    label: Nat Gas (Henry Hub)
+    source: fred
+    series_id: DHHNGSP
+    unit: $/MMBtu
+    frequency: daily
+    change_style: pct
+    source_url: https://fred.stlouisfed.org/series/DHHNGSP
+
+  # NOTE: FRED's LBMA gold series was discontinued over licensing — it still
+  # returns data, it just stops years ago. Phase 5 must verify liveness and
+  # swap to the Stooq fallback if the last as_of is stale. See SOURCES.md.
+  - id: gold
+    dashboard: commodities
+    label: Gold
+    source: fred
+    series_id: GOLDAMGBD228NLBM
+    unit: $/oz
+    frequency: daily
+    change_style: pct
+    source_url: https://fred.stlouisfed.org/series/GOLDAMGBD228NLBM
+    fallback:
+      source: stooq
+      series_id: xauusd
+
+  # Daily COMEX futures, quoted in $/lb (~4.35), NOT the IMF monthly $/mt (~9600).
+  - id: copper
+    dashboard: commodities
+    label: Copper (COMEX)
+    source: stooq
+    series_id: hg.f
+    unit: $/lb
+    frequency: daily
+    change_style: pct
+    source_url: https://stooq.com/q/?s=hg.f
+    fallback:
+      source: fred
+      series_id: PCOPPUSDM
+
+  - id: gasoline_retail
+    dashboard: commodities
+    label: US Retail Gasoline
+    source: fred
+    series_id: GASREGW
+    unit: $/gal
+    frequency: weekly
+    change_style: pct
+    source_url: https://fred.stlouisfed.org/series/GASREGW
+
+  # --- Real Estate ---------------------------------------------------------
+  - id: zhvi_us
+    dashboard: real_estate
+    label: Zillow Home Value Index
+    source: zillow
+    series_id: zhvi_us_all_homes_sa
+    unit: index $
+    frequency: monthly
+    change_style: pct
+    source_url: https://www.zillow.com/research/data/
+
+  - id: zori_us
+    dashboard: real_estate
+    label: Zillow Observed Rent
+    source: zillow
+    series_id: zori_us_sa
+    unit: $
+    frequency: monthly
+    change_style: pct
+    source_url: https://www.zillow.com/research/data/
+
+  - id: fhfa_hpi
+    dashboard: real_estate
+    label: FHFA House Price Index
+    source: fhfa
+    series_id: hpi_us_purchase_only_sa
+    unit: index
+    frequency: quarterly
+    change_style: pct
+    source_url: https://www.fhfa.gov/data/hpi
+
+  - id: mortgage_30yr
+    dashboard: real_estate
+    label: 30-Yr Mortgage Rate
+    source: fred
+    series_id: MORTGAGE30US
+    unit: "%"
+    frequency: weekly
+    change_style: pp
+    source_url: https://fred.stlouisfed.org/series/MORTGAGE30US
+
+  - id: housing_starts
+    dashboard: real_estate
+    label: Housing Starts
+    source: fred
+    series_id: HOUST
+    unit: thousands SAAR
+    frequency: monthly
+    change_style: pct
+    source_url: https://fred.stlouisfed.org/series/HOUST
+
+  - id: for_sale_inventory
+    dashboard: real_estate
+    label: For-Sale Inventory
+    source: zillow
+    series_id: inventory_us_sa
+    unit: count
+    frequency: monthly
+    change_style: pct
+    source_url: https://www.zillow.com/research/data/
+
+  # --- Macro ---------------------------------------------------------------
+  - id: treasury_10yr
+    dashboard: macro
+    label: 10-Yr Treasury
+    source: fred
+    series_id: DGS10
+    unit: "%"
+    frequency: daily
+    change_style: pp
+    source_url: https://fred.stlouisfed.org/series/DGS10
+
+  - id: fed_funds
+    dashboard: macro
+    label: Fed Funds (Effective)
+    source: fred
+    series_id: DFF
+    unit: "%"
+    frequency: daily
+    change_style: pp
+    source_url: https://fred.stlouisfed.org/series/DFF
+
+  - id: cpi_yoy
+    dashboard: macro
+    label: CPI (YoY)
+    source: fred
+    series_id: CPIAUCSL
+    unit: "%"
+    frequency: monthly
+    change_style: pp
+    transform: yoy
+    source_url: https://fred.stlouisfed.org/series/CPIAUCSL
+
+  - id: unemployment
+    dashboard: macro
+    label: Unemployment Rate
+    source: fred
+    series_id: UNRATE
+    unit: "%"
+    frequency: monthly
+    change_style: pp
+    source_url: https://fred.stlouisfed.org/series/UNRATE
+
+  - id: real_gdp_growth
+    dashboard: macro
+    label: Real GDP Growth
+    source: fred
+    series_id: GDPC1
+    unit: "%"
+    frequency: quarterly
+    change_style: pp
+    transform: qoq_annualized
+    source_url: https://fred.stlouisfed.org/series/GDPC1
+
+  # FRED publishes this in percentage points (0.18); displayed as bps (+18 bps).
+  - id: spread_2s10s
+    dashboard: macro
+    label: 2s10s Spread
+    source: fred
+    series_id: T10Y2Y
+    unit: bps
+    frequency: daily
+    change_style: bps
+    source_url: https://fred.stlouisfed.org/series/T10Y2Y
+
+  - id: dollar_index
+    dashboard: macro
+    label: US Dollar (Broad)
+    source: fred
+    series_id: DTWEXBGS
+    unit: index
+    frequency: daily
+    change_style: pct
+    source_url: https://fred.stlouisfed.org/series/DTWEXBGS
+
+  # --- Equities & Options --------------------------------------------------
+  - id: sp500
+    dashboard: equities
+    label: S&P 500
+    source: stooq
+    series_id: ^spx
+    unit: index
+    frequency: daily
+    change_style: pct
+    source_url: https://stooq.com/q/?s=%5Espx
+
+  - id: nasdaq100
+    dashboard: equities
+    label: Nasdaq 100
+    source: stooq
+    series_id: ^ndx
+    unit: index
+    frequency: daily
+    change_style: pct
+    source_url: https://stooq.com/q/?s=%5Endx
+
+  # FRED VIXCLS rather than scraping Stooq: same API key, cleaner history.
+  - id: vix
+    dashboard: equities
+    label: VIX
+    source: fred
+    series_id: VIXCLS
+    unit: index
+    frequency: daily
+    change_style: pct
+    source_url: https://fred.stlouisfed.org/series/VIXCLS
+    fallback:
+      source: stooq
+      series_id: ^vix
+
+  # Knowingly fragile: no API, no FRED mirror, scraped from files that change
+  # format and block cloud IPs. When it breaks, this tile alone goes stale.
+  - id: put_call_ratio
+    dashboard: equities
+    label: Cboe Put/Call Ratio
+    source: cboe
+    series_id: total_put_call
+    unit: ratio
+    frequency: daily
+    change_style: pct
+    source_url: https://www.cboe.com/us/options/market_statistics/
+
+# Placeholder tickers — edit freely, this is config, not code.
+# Stooq symbol conventions: US equities are <ticker>.us, crypto is <pair>.
+watchlist:
+  dashboard: equities
+  source: stooq
+  unit: price
+  frequency: daily
+  change_style: pct
+  tickers:
+    - {id: spy, label: SPY, series_id: spy.us}
+    - {id: qqq, label: QQQ, series_id: qqq.us}
+    - {id: aapl, label: AAPL, series_id: aapl.us}
+    - {id: nvda, label: NVDA, series_id: nvda.us}
+    - {id: msft, label: MSFT, series_id: msft.us}
+    - {id: btcusd, label: BTC-USD, series_id: btcusd}
+
+settings:
+  history_floor: "1990-01-01"
+  # Sparkline lookback by frequency (D8) — every sparkline gets 12-40 points.
+  sparkline_years:
+    daily: 1
+    weekly: 1
+    monthly: 3
+    quarterly: 5
+  # A tile is flagged stale when its as_of exceeds this multiple of its
+  # expected cadence (D12) — so a 25-day-old CPI reading stays healthy.
+  stale_multiplier: 2.0
