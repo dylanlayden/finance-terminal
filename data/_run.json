@@ -1,26 +1,9 @@
 {
-  "last_attempt": "2026-07-24T19:42:18+00:00",
-  "last_success": "2026-07-24T19:42:18+00:00",
+  "last_attempt": "2026-07-24T19:43:57+00:00",
+  "last_success": "2026-07-24T19:43:57+00:00",
   "failures": [
-    "wti_crude",
-    "brent_crude",
-    "henry_hub_gas",
-    "gold",
-    "copper",
-    "gasoline_retail",
-    "fhfa_hpi",
-    "mortgage_30yr",
-    "housing_starts",
-    "treasury_10yr",
-    "fed_funds",
-    "cpi_yoy",
-    "unemployment",
-    "real_gdp_growth",
-    "spread_2s10s",
-    "dollar_index",
-    "sp500",
-    "nasdaq100"
+    "gold"
   ],
-  "metrics_ok": 7,
+  "metrics_ok": 24,
   "metrics_total": 25
 }
