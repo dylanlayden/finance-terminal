@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import html
 
+import altair as alt
 import streamlit as st
 
 from terminal.config import Registry
@@ -16,7 +17,6 @@ from terminal.formatting import (
     change_period_label,
     format_change,
     format_value,
-    sparkline_label,
 )
 from terminal.store import Reading, RunState, sparkline_frame
 
@@ -129,26 +129,66 @@ def _tile_html(reading: Reading, *, compact: bool) -> str:
     """
 
 
+# Selectable chart windows (D8 default per frequency, plus a 5yr + full view).
+_RANGES = {"1Y": 1, "5Y": 5, "Max": 100}
+
+
+def _default_range(frequency: str) -> str:
+    # Daily/weekly read best over a year; slow series need the longer view.
+    return "1Y" if frequency in ("daily", "weekly") else "5Y"
+
+
+def _x_axis(window) -> alt.Axis:
+    """Month abbreviations every other month up close; year ticks when zoomed out."""
+    days = (window["as_of"].max() - window["as_of"].min()).days
+    if days <= 800:  # ~2yr or less → "Jan, Mar, May, …"
+        return alt.Axis(
+            format="%b", tickCount={"interval": "month", "step": 2},
+            labelAngle=0, title=None, grid=False,
+        )
+    step = max(1, round(days / 365.25 / 8))  # ~8 year labels, thinned for long spans
+    return alt.Axis(
+        format="%Y", tickCount={"interval": "year", "step": step},
+        labelAngle=0, title=None, grid=False,
+    )
+
+
 def _render_chart(reading: Reading, years: int) -> None:
     """Full-height history chart, dated x-axis + hover — behind a click (B)."""
     window = sparkline_frame(reading, years)
     if len(window) <= 1:
         st.caption("Not enough history yet — the chart fills in as data collects.")
         return
-    st.line_chart(
-        window.set_index("as_of")["value"],
-        height=220,
-        color="#3d7f9e",
+    chart = (
+        alt.Chart(window)
+        .mark_line(color="#3d7f9e")
+        .encode(
+            x=alt.X("as_of:T", axis=_x_axis(window)),
+            y=alt.Y("value:Q", axis=alt.Axis(title=None)),
+            tooltip=[
+                alt.Tooltip("as_of:T", title="date"),
+                alt.Tooltip("value:Q", title=reading.metric.label),
+            ],
+        )
+        .properties(height=220)
     )
+    st.altair_chart(chart, use_container_width=True)
 
 
-def render_tile(reading: Reading, sparkline_years: int, *, compact: bool = False) -> None:
+def render_tile(reading: Reading, *, compact: bool = False) -> None:
     st.markdown(_tile_html(reading, compact=compact), unsafe_allow_html=True)
     if not reading.has_data:
         return
-    span = sparkline_label(reading.metric.frequency, sparkline_years)
-    with st.expander(f"chart · {span}"):
-        _render_chart(reading, sparkline_years)
+    with st.expander("chart"):
+        default = _default_range(reading.metric.frequency)
+        choice = st.segmented_control(
+            "range",
+            options=list(_RANGES),
+            default=default,
+            key=f"range_{reading.metric.id}",
+            label_visibility="collapsed",
+        )
+        _render_chart(reading, _RANGES[choice or default])
 
 
 def render_grid(
@@ -159,8 +199,7 @@ def render_grid(
         batch = readings[row_start : row_start + columns]
         for col, reading in zip(cols, batch, strict=False):
             with col:
-                years = registry.settings.sparkline_window_years(reading.metric.frequency)
-                render_tile(reading, years, compact=compact)
+                render_tile(reading, compact=compact)
 
 
 def render_banner(run_state: RunState, readings: list[Reading]) -> None:
