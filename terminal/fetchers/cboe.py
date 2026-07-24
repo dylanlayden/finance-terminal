@@ -50,12 +50,13 @@ def _vix_history(since: date) -> Series:
     if "DATE" not in frame.columns or "CLOSE" not in frame.columns:
         raise FetchError(f"unexpected VIX_History columns: {list(frame.columns)[:6]}")
 
+    # Column name must not start with "_": itertuples renames those positionally.
     parsed = pd.to_datetime(frame["DATE"], format="mixed", errors="coerce")
-    frame = frame.assign(_d=parsed).dropna(subset=["_d", "CLOSE"])
+    frame = frame.assign(parsed_date=parsed).dropna(subset=["parsed_date", "CLOSE"])
     return [
-        (row._d.date(), float(row.CLOSE))
+        (row.parsed_date.date(), float(row.CLOSE))
         for row in frame.itertuples()
-        if row._d.date() >= since
+        if row.parsed_date.date() >= since
     ]
 
 

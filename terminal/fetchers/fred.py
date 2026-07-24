@@ -7,6 +7,7 @@ which is exactly what v1 is shaped for.
 from __future__ import annotations
 
 import os
+import re
 from datetime import date, datetime
 
 from terminal.config import Metric
@@ -19,11 +20,30 @@ API_URL = "https://api.stlouisfed.org/fred/series/observations"
 KEY_ENV_VARS = ("FRED_API", "FRED_API_KEY")
 
 
+KEY_PATTERN = re.compile(r"^[a-z0-9]{32}$")
+
+
 def api_key() -> str:
+    """Return the key, or fail with a diagnosis that never prints the key itself.
+
+    FRED rejects malformed keys with a bare HTTP 400, which shows up as ~20
+    identical failures and tells you nothing. Checking the shape locally turns
+    that into one actionable message.
+    """
     for var in KEY_ENV_VARS:
-        value = os.environ.get(var)
-        if value:
-            return value.strip()
+        raw = os.environ.get(var)
+        if not raw:
+            continue
+        key = raw.strip()
+        if KEY_PATTERN.match(key):
+            return key
+        raise FetchError(
+            f"{var} is set but is not a valid FRED key: expected 32 lowercase "
+            f"alphanumeric characters, got {len(key)} chars"
+            + (" (contains uppercase)" if key.lower() != key else "")
+            + (" (contains non-alphanumeric)" if not key.isalnum() else "")
+            + (f" (raw value had {len(raw) - len(key)} chars of whitespace)" if raw != key else "")
+        )
     raise FetchError(f"no FRED API key found in any of {KEY_ENV_VARS}")
 
 
