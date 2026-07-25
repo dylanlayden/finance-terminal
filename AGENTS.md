@@ -4,7 +4,7 @@ Orientation for any agent working in this repo. The canonical version lives here
 
 ## What this is
 
-A private, phone-friendly finance dashboard ("Custom Bloomberg terminal") — 25 metrics across 4 dashboards (Commodities, Real Estate, Macro, Equities & Options), refreshed daily from free public sources. **Python / Streamlit**, deployed on Streamlit Community Cloud. Live: https://finance-terminal-cjpwyl4cvpwojgndo766gc.streamlit.app/
+A private, phone-friendly finance dashboard ("Custom Bloomberg terminal") — 26 metrics across 4 dashboards (Macro, Commodities, Real Estate, Equities & Options), refreshed daily from free public sources. **Python / Streamlit**, deployed on Streamlit Community Cloud. Live: https://finance-terminal-cjpwyl4cvpwojgndo766gc.streamlit.app/
 
 ## The mental model (read this first)
 

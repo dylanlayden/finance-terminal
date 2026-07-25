@@ -86,9 +86,9 @@ class TestRealRegistry:
 
     def test_dashboards_match_spec(self) -> None:
         assert [d.id for d in registry().dashboards] == [
+            "macro",
             "commodities",
             "real_estate",
-            "macro",
             "equities",
         ]
 

@@ -19,7 +19,8 @@ The spec leaned on Stooq as the primary keyless source for all market data (S&P 
 
 | metric | spec'd | now | why |
 |---|---|---|---|
-| Gold | FRED `GOLDAMGBD228NLBM` | FRED, liveness checked each run | The LBMA series was discontinued over licensing and still *returns* stale data that looks healthy. The runner now flags it (see Gold liveness below). The Stooq `xauusd` fallback died with Stooq. **If gold reads stale, it needs a new source — likely a signup.** |
+| Gold | FRED `GOLDAMGBD228NLBM` | **LBMA `gold_pm`** (keyless daily JSON) | FRED dropped its LBMA spot series over licensing (the id now 404s), so gold briefly ran off a Pax-Gold-on-Coinbase proxy (~4yr history). Replaced with LBMA's own open price feed — the actual settled benchmark, daily $/oz back to 1968 (floored to 1990), no key. See "Precious metals" below. |
+| Silver | *(not in spec)* | **LBMA `silver`** (keyless daily JSON) | Added 2026-07-25. Same LBMA feed family as gold; FRED has no live silver spot series either. Daily $/oz back to 1968 (floored to 1990). |
 | VIX | Stooq `^vix` | FRED `VIXCLS`, Cboe CSV fallback | same key already in use, no scraping |
 | FHFA HPI | FHFA dataset `hpi_po_us` | FRED `HPIPONM226S` | FHFA's own CSV endpoints 404 after a site restructure; FRED mirrors the same purchase-only index (monthly, not quarterly) |
 
@@ -31,7 +32,7 @@ Individual equity tickers (SPY, QQQ, AAPL, NVDA, MSFT) have **no remaining free,
 
 **Cboe put/call ratio** — no API, no FRED mirror. Read out of the daily market-statistics page's server-rendered payload. Knowingly fragile; when Cboe changes their front end it breaks and the resilience contract sends that one tile stale. It's also the only metric with **no history** — its sparkline accumulates from our own daily pulls.
 
-**Gold liveness** — the FRED LBMA series may be frozen. Rather than hard-code a verdict, the per-tile staleness flag (`as_of` past 2× the daily cadence) will surface it automatically: if gold is dead, its tile shows `stale` within days. Watch for it at first light.
+**Precious metals (gold + silver)** — LBMA publishes its official gold/silver benchmark auction prices as open, keyless JSON at `https://prices.lbma.org.uk/json/<feed>.json` (`gold_pm`, `silver`), one row per day back to 1968: `{"d": "YYYY-MM-DD", "v": [USD, GBP, EUR]}`. The `lbma` fetcher takes the USD leg. This is the real settled benchmark, not a proxy, and needs no signup — the search for a keyless, long-history gold source (FRED discontinued its LBMA spot series; Stooq is bot-gated; PAXG-on-Coinbase had only ~4 years) ends here. If a feed ever changes shape, only that tile goes stale.
 
 **FRED index history is short** — `SP500`/`NASDAQ100` on FRED only retain ~10 years, and FRED nulls weekends/holidays. Fine for a 1-year sparkline.
 
@@ -43,5 +44,6 @@ Individual equity tickers (SPY, QQQ, AAPL, NVDA, MSFT) have **no remaining free,
 | Zillow Research | 3 | no | ✅ all three pull real US-level data |
 | Cboe | 2 (VIX fallback, put/call) | no | ✅ both working |
 | Coinbase | 2 (crypto watchlist) | no | ✅ working |
+| LBMA | 2 (gold, silver) | no | ✅ keyless daily JSON, 1968→present |
 
 **The `FRED_API` secret is not a valid key** — the runner reports it as 105 characters with non-alphanumeric content, where a FRED key is exactly 32 lowercase alphanumeric. Until it's replaced with the real key, all 19 FRED metrics show `error`/`no data`. This is the one blocker only Dylan can clear.

@@ -13,7 +13,7 @@ from pathlib import Path
 import pytest
 
 from terminal.config import Metric
-from terminal.fetchers import cboe, coinbase, fred, zillow
+from terminal.fetchers import cboe, coinbase, fred, lbma, zillow
 from terminal.fetchers.base import FetchError
 
 FIXTURES = Path(__file__).parent / "fixtures"
@@ -101,6 +101,19 @@ class TestCboe:
         monkeypatch.setattr(cboe, "http_get", lambda *a, **k: FakeResponse("no ratios here"))
         with pytest.raises(FetchError, match="front end likely changed"):
             cboe.fetch(metric("cboe", "total_put_call"))
+
+
+class TestLbma:
+    def test_takes_usd_leg_skips_nulls_and_floor(self, monkeypatch) -> None:
+        serve(monkeypatch, lbma, "lbma_gold.json")
+        series = lbma.fetch(metric("lbma", "gold_pm"), since=date(1990, 1, 1))
+        # USD is v[0]; the null-USD row and the pre-floor 1968 row are dropped.
+        assert series == [(date(1990, 1, 2), 398.1), (date(2026, 7, 24), 4067.3)]
+
+    def test_empty_after_filtering_is_an_error(self, monkeypatch) -> None:
+        serve(monkeypatch, lbma, "lbma_gold.json")
+        with pytest.raises(FetchError, match="no usable LBMA observations"):
+            lbma.fetch(metric("lbma", "gold_pm"), since=date(2100, 1, 1))
 
 
 class TestCoinbase:

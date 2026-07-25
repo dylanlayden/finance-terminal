@@ -18,12 +18,12 @@
 #   format        (optional) override the unit-inferred format
 
 dashboards:
+  - id: macro
+    label: Macro
   - id: commodities
     label: Commodities
   - id: real_estate
     label: Real Estate
-  - id: macro
-    label: Macro
   - id: equities
     label: Equities & Options
 
@@ -59,19 +59,30 @@ metrics:
     change_style: pct
     source_url: https://fred.stlouisfed.org/series/DHHNGSP
 
-  # FRED's LBMA gold series (GOLDAMGBD228NLBM) is discontinued and now 400s.
-  # Swapped to Pax Gold on Coinbase: 1 PAXG is backed 1:1 by a troy ounce of
-  # physical gold and trades within a fraction of a percent of LBMA spot —
-  # a keyless daily $/oz proxy. See SOURCES.md.
+  # LBMA publishes its official gold/silver benchmark auction prices as keyless
+  # daily JSON back to 1968 — the actual settled reference, not a proxy. This
+  # replaces the short-history Pax-Gold-on-Coinbase proxy; FRED dropped its LBMA
+  # spot series entirely (gold + silver), so it's no longer an option. series_id
+  # is the feed name; `gold_pm` is the PM auction, the standard daily reference.
   - id: gold
     dashboard: commodities
     label: Gold
-    source: coinbase
-    series_id: PAXG-USD
+    source: lbma
+    series_id: gold_pm
     unit: $/oz
     frequency: daily
     change_style: pct
-    source_url: https://www.coinbase.com/price/pax-gold
+    source_url: https://www.lbma.org.uk/prices-and-data/precious-metal-prices
+
+  - id: silver
+    dashboard: commodities
+    label: Silver
+    source: lbma
+    series_id: silver
+    unit: $/oz
+    frequency: daily
+    change_style: pct
+    source_url: https://www.lbma.org.uk/prices-and-data/precious-metal-prices
 
   # Reverted to the spec's monthly IMF series: Stooq (the daily proxy) now
   # gates its CSV behind a JS proof-of-work challenge. See SOURCES.md.
