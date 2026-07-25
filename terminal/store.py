@@ -14,7 +14,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from terminal.config import DATA_DIR, REPO_ROOT, Metric
+from terminal.config import CONFIG_PATH, DATA_DIR, REPO_ROOT, Metric
 
 COLUMNS = ["as_of", "value", "status"]
 RUN_STATE_PATH = DATA_DIR / "_run.json"
@@ -126,12 +126,36 @@ def data_dir_is_empty() -> bool:
     return not any(DATA_DIR.glob("*.csv"))
 
 
+def content_stamp(paths: list[Path] | None = None) -> str:
+    """A cheap fingerprint of everything the board renders from: the config plus
+    the per-metric CSVs and run-state the refresh job writes.
+
+    The app process on Streamlit Community Cloud stays warm across a redeploy, so
+    a time-based cache (`st.cache_data(ttl=...)`) keeps serving the *old*
+    readings until its window lapses — the daily data refresh wouldn't show, and
+    a config change never would. Folding this stamp into those cache keys busts
+    them the instant any tracked file changes on disk (which a git pull does),
+    so new data and config appear without a manual reboot. Missing files are
+    skipped, so a not-yet-wired metric never breaks the stamp.
+    """
+    if paths is None:
+        paths = [CONFIG_PATH, RUN_STATE_PATH, *sorted(DATA_DIR.glob("*.csv"))]
+    parts: list[str] = []
+    for path in paths:
+        try:
+            parts.append(f"{path.name}:{path.stat().st_mtime_ns}")
+        except OSError:
+            continue
+    return "|".join(parts)
+
+
 __all__ = [
     "COLUMNS",
     "DATA_DIR",
     "REPO_ROOT",
     "Reading",
     "RunState",
+    "content_stamp",
     "data_dir_is_empty",
     "load_series",
     "read_metric",

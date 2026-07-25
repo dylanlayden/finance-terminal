@@ -8,7 +8,7 @@ from pathlib import Path
 import pandas as pd
 
 from terminal.config import Metric
-from terminal.store import load_series, read_metric, sparkline_frame
+from terminal.store import content_stamp, load_series, read_metric, sparkline_frame
 
 
 def metric(tmp_path: Path, frequency: str = "daily", **overrides) -> Metric:
@@ -89,3 +89,33 @@ def test_sparkline_window_trims_to_lookback(monkeypatch, tmp_path: Path) -> None
     reading = read_metric(m, stale_after_days=2, today=date(2026, 7, 23))
     window = sparkline_frame(reading, years=1, today=date(2026, 7, 23))
     assert len(window) == 2
+
+
+class TestContentStamp:
+    """The stamp is the cache-buster that lets a redeploy/refresh show without a
+    reboot — it must actually change when the tracked files change."""
+
+    def test_changes_when_a_file_is_added(self, tmp_path: Path) -> None:
+        a = tmp_path / "gold.csv"
+        a.write_text("x")
+        before = content_stamp([a])
+        b = tmp_path / "silver.csv"
+        b.write_text("y")
+        after = content_stamp([a, b])
+        assert before != after
+
+    def test_changes_when_a_file_is_rewritten(self, tmp_path: Path) -> None:
+        import os
+
+        a = tmp_path / "gold.csv"
+        a.write_text("v1")
+        before = content_stamp([a])
+        a.write_text("v2")
+        os.utime(a, ns=(2_000_000_000_000_000_000, 2_000_000_000_000_000_000))
+        assert content_stamp([a]) != before
+
+    def test_missing_files_are_skipped_not_fatal(self, tmp_path: Path) -> None:
+        present = tmp_path / "gold.csv"
+        present.write_text("x")
+        stamp = content_stamp([present, tmp_path / "not_there.csv"])
+        assert "gold.csv" in stamp and "not_there.csv" not in stamp

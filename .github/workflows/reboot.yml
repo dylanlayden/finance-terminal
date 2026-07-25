@@ -1,0 +1,54 @@
+name: Reboot Streamlit app
+
+# Optional belt-and-suspenders for the "app serves stale code after a push"
+# problem. The real fix lives in the app itself: registry() is keyed on the
+# config file's mtime and the readings cache is keyed on store.content_stamp(),
+# so a redeploy or the daily data refresh shows up on the next rerun without a
+# reboot (Streamlit Community Cloud keeps the app process warm across a git
+# pull, so time-based caches alone would serve stale content until a manual
+# reboot). See AGENTS.md → "Deploys".
+#
+# This workflow force-restarts the deployed app after every push to main, via
+# Streamlit's official restart endpoint. It is OFF until you add both repo
+# secrets — without them the step logs and exits 0, so it never blocks a push:
+#
+#   STREAMLIT_APP_ID     the app id, from the Manage-app page / app URL
+#   STREAMLIT_API_TOKEN  a Streamlit account API token
+#
+# Free Community Cloud token access isn't documented; if the call is rejected
+# the step reports the HTTP status and still succeeds. The in-app cache-busting
+# above is what actually keeps the board fresh — treat this as insurance.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: reboot
+  cancel-in-progress: true
+
+jobs:
+  reboot:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Restart the deployed app
+        env:
+          APP_ID: ${{ secrets.STREAMLIT_APP_ID }}
+          TOKEN: ${{ secrets.STREAMLIT_API_TOKEN }}
+        run: |
+          if [ -z "$APP_ID" ] || [ -z "$TOKEN" ]; then
+            echo "STREAMLIT_APP_ID / STREAMLIT_API_TOKEN not set — skipping reboot."
+            echo "The app busts its own caches on content change, so this is optional."
+            exit 0
+          fi
+          code=$(curl -sS -o /tmp/reboot_resp -w "%{http_code}" -X POST \
+            "https://api.streamlit.io/v1/apps/${APP_ID}/restart" \
+            -H "Authorization: Bearer ${TOKEN}" || echo "000")
+          echo "restart endpoint returned HTTP ${code}"
+          cat /tmp/reboot_resp 2>/dev/null || true
+          # Never fail a push over a reboot; the in-app cache-busting is the fix.
+          exit 0

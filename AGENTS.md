@@ -12,6 +12,15 @@ Two **decoupled halves**:
 1. **Refresh job** (`terminal/runner.py`, run daily by `.github/workflows/refresh.yml`) fetches each metric's *full history* and writes one CSV per metric to `/data/<id>.csv`. It **never dies** — each metric is fetched in isolation; a dead source leaves its tile on last-good and the job still exits 0.
 2. **Streamlit app** (`app.py` + `terminal/`) only ever *reads* `/data`. It never fetches. Data lives on `main`, so **every push auto-redeploys the app** with fresh data.
 
+## Deploys & freshness (why the app doesn't need a reboot)
+
+Streamlit Community Cloud keeps the app **process warm across a git pull** — it re-runs the script but does *not* re-import modules or clear caches. So anything cached at module scope or via `st.cache_data(ttl=…)` would keep serving the **old** config/data after a redeploy or the daily refresh, until someone hits *Manage app → Reboot*. Two deliberate cache keys avoid that:
+
+- **`config.registry()`** is memoized on `metrics.yaml`'s **mtime** (not a plain `lru_cache`), so a pushed config change is read on the next rerun.
+- **`app._readings_for(...)`** takes a `stamp` argument from **`store.content_stamp()`** (a fingerprint of `metrics.yaml` + `/data/*.csv` + `_run.json` mtimes). New data → new stamp → cache busts.
+
+Net: config and data changes appear on their own after a deploy — **no reboot**. `.github/workflows/reboot.yml` is an optional force-restart on push (off unless the `STREAMLIT_APP_ID` / `STREAMLIT_API_TOKEN` secrets are set); the cache-busting above is the actual fix. If you add a new render-time input the app should react to, fold it into `content_stamp` rather than lowering the TTL.
+
 ## Load-bearing files
 
 - **`config/metrics.yaml`** — the metric registry. The single source of truth for what the terminal shows. Adding a metric starts (and usually ends) here.

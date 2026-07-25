@@ -44,6 +44,24 @@ def test_loads_valid_config(tmp_path: Path) -> None:
     assert reg.settings.stale_after_days("daily") == 10
 
 
+def test_registry_rereads_when_the_file_changes(monkeypatch, tmp_path: Path) -> None:
+    """The memo must bust on mtime, or a Cloud redeploy (warm process) would pin
+    the old config until a manual reboot — the whole point of dropping lru_cache."""
+    import os
+
+    from terminal import config as config_mod
+
+    path = write(tmp_path, VALID)
+    monkeypatch.setattr(config_mod, "CONFIG_PATH", path)
+    monkeypatch.setattr(config_mod, "_registry_cache", {})
+
+    assert [d.id for d in registry().dashboards] == ["macro"]
+
+    path.write_text(textwrap.dedent(VALID).replace("label: Macro", "label: Macro Renamed"))
+    os.utime(path, ns=(2_000_000_000_000_000_000, 2_000_000_000_000_000_000))
+    assert registry().dashboards[0].label == "Macro Renamed"
+
+
 def test_rejects_incomplete_stale_days(tmp_path: Path) -> None:
     body = VALID.replace(
         "stale_days: {daily: 10, weekly: 20, monthly: 80, quarterly: 280}",

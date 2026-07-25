@@ -9,7 +9,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import date
-from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
@@ -239,6 +238,25 @@ def load_registry(path: Path | None = None) -> Registry:
     return Registry(dashboards=dashboards, settings=settings)
 
 
-@lru_cache(maxsize=1)
+_registry_cache: dict[int, Registry] = {}
+
+
 def registry() -> Registry:
-    return load_registry()
+    """Parsed config, memoized on metrics.yaml's mtime.
+
+    A plain lru_cache would parse once and pin that Registry for the life of the
+    process. Streamlit Community Cloud keeps the app process *warm* across a
+    redeploy, so a pushed config change (new metric, reordered dashboard) would
+    stay invisible until a manual reboot. Keying on the file's mtime means the
+    next rerun after a deploy re-reads the yaml automatically — while still
+    parsing just once per version.
+    """
+    try:
+        stamp = CONFIG_PATH.stat().st_mtime_ns
+    except OSError:
+        return load_registry()  # let load_registry raise the useful error
+    reg = _registry_cache.get(stamp)
+    if reg is None:
+        _registry_cache.clear()
+        reg = _registry_cache[stamp] = load_registry()
+    return reg
