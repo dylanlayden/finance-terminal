@@ -26,15 +26,26 @@ def format_value(value: float | None, metric: Metric) -> str:
         return f"{value * 100:,.0f} bps"
     if unit.startswith("$/") or unit == "$" or unit == "price" or unit == "index $":
         return f"${value:,.2f}"
+    if unit == "$ compact":
+        return format_compact_dollars(value)
     if unit == "thousands SAAR":
         return f"{value:,.0f}k"
     if unit == "count":
         return f"{value:,.0f}"
+    if unit == "days":
+        return f"{value:,.0f}d"
     if unit == "ratio":
         return f"{value:,.2f}"
     if unit == "index":
         return f"{value:,.2f}" if value < 100 else f"{value:,.0f}"
     return f"{value:,.2f}"
+
+
+def format_compact_dollars(value: float) -> str:
+    for suffix, threshold in (("T", 1_000_000_000_000), ("B", 1_000_000_000), ("M", 1_000_000)):
+        if abs(value) >= threshold:
+            return f"${value / threshold:,.2f}{suffix}"
+    return f"${value:,.0f}"
 
 
 def format_change(current: float | None, previous: float | None, metric: Metric) -> str:

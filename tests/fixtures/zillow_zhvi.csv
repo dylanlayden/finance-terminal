@@ -1,3 +1,6 @@
 RegionID,SizeRank,RegionName,RegionType,StateName,2026-05-31,2026-06-30
 102001,0,United States,country,,373242.05,372995.19
 394913,1,"New York, NY",msa,NY,650000.0,651000.0
+20330,2,San Francisco,city,CA,0.048,0.050
+20331,3,South Lake Tahoe,city,CA,800000.0,840000.0
+20332,4,Truckee,city,CA,1000000.0,1020000.0

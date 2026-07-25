@@ -13,7 +13,7 @@ from pathlib import Path
 import pytest
 
 from terminal.config import Metric
-from terminal.fetchers import cboe, coinbase, fred, lbma, zillow
+from terminal.fetchers import cboe, coinbase, coingecko, defillama, fred, lbma, zillow
 from terminal.fetchers.base import FetchError
 
 FIXTURES = Path(__file__).parent / "fixtures"
@@ -75,6 +75,16 @@ class TestZillow:
         series = zillow.fetch(metric("zillow", "zhvi_us_all_homes_sa"))
         assert series == [(date(2026, 5, 31), 373242.05), (date(2026, 6, 30), 372995.19)]
 
+    def test_extracts_named_city_row_and_scales_percent(self, monkeypatch) -> None:
+        serve(monkeypatch, zillow, "zillow_zhvi.csv")
+        series = zillow.fetch(metric("zillow", "price_cut_pct_sf_city"))
+        assert series == [(date(2026, 5, 31), 4.8), (date(2026, 6, 30), 5.0)]
+
+    def test_averages_tahoe_basket_members(self, monkeypatch) -> None:
+        serve(monkeypatch, zillow, "zillow_zhvi.csv")
+        series = zillow.fetch(metric("zillow", "zhvi_tahoe_basket"))
+        assert series == [(date(2026, 5, 31), 900000.0), (date(2026, 6, 30), 930000.0)]
+
     def test_unknown_series_is_an_error(self) -> None:
         with pytest.raises(FetchError, match="unknown Zillow series"):
             zillow.fetch(metric("zillow", "not_a_real_file"))
@@ -129,3 +139,28 @@ class TestCoinbase:
         monkeypatch.setattr(coinbase, "http_get", fake_get)
         series = coinbase.fetch(metric("coinbase", "BTC-USD"), since=date(2026, 7, 20))
         assert dict(series)[date(2026, 7, 24)] == 65307.0
+
+
+class TestCoinGecko:
+    def test_extracts_global_snapshot_fields(self, monkeypatch) -> None:
+        serve(monkeypatch, coingecko, "coingecko_global.json")
+        series = coingecko.fetch(metric("coingecko", "btc_dominance"))
+        assert len(series) == 1
+        assert series[0][1] == 51.2
+
+        series = coingecko.fetch(metric("coingecko", "active_cryptocurrencies"))
+        assert series[0][1] == 17803.0
+
+
+class TestDefiLlama:
+    def test_extracts_defi_tvl_history(self, monkeypatch) -> None:
+        serve(monkeypatch, defillama, "defillama_tvl.json")
+        series = defillama.fetch(metric("defillama", "defi_tvl_usd"), since=date(2026, 7, 20))
+        assert series == [(date(2026, 7, 20), 1100.0), (date(2026, 7, 21), 1200.0)]
+
+    def test_extracts_stablecoin_history(self, monkeypatch) -> None:
+        serve(monkeypatch, defillama, "defillama_stablecoins.json")
+        series = defillama.fetch(
+            metric("defillama", "stablecoin_supply_usd"), since=date(2026, 7, 20)
+        )
+        assert series == [(date(2026, 7, 20), 2200.0), (date(2026, 7, 21), 2400.0)]

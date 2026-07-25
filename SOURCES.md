@@ -36,14 +36,39 @@ Individual equity tickers (SPY, QQQ, AAPL, NVDA, MSFT) have **no remaining free,
 
 **FRED index history is short** — `SP500`/`NASDAQ100` on FRED only retain ~10 years, and FRED nulls weekends/holidays. Fine for a 1-year sparkline.
 
-## Verification status (live-probed 2026-07-23)
+**Local Zillow markets** — Zillow's public CSVs are still keyless when fetched
+directly from `files.zillowstatic.com`, even though the interactive
+`zillow.com/research/data/` page may challenge automated browsers. The
+`zillow` fetcher now supports named region rows, not just the national
+`RegionType == country` row. SF rows use `RegionName == "San Francisco"` and
+`StateName == "CA"`. The Tahoe tile is an equal-weight basket of Zillow city
+rows around the lake; it is a local-market proxy, **not** lakefront-only
+property data. True waterfront segmentation would require MLS/ATTOM/CoreLogic
+style property-level data.
+
+**SF construction proxy** — city-level "under construction" is not available
+from the existing keyless sources as a clean historical time series. The shipped
+tile uses FRED `SANF806BPPRIVSA`: monthly, seasonally adjusted private housing
+structures authorized by building permits for the San Francisco-Oakland-Berkeley
+MSA. It is a timely construction-pipeline proxy, not an in-construction count.
+
+**Crypto market structure** — CoinGecko's public `/global` endpoint returns a
+current snapshot for total crypto market cap, total volume, BTC dominance,
+active cryptoassets, and active markets. The free anonymous endpoint does not
+provide the full history for these aggregate fields, so those tiles accumulate
+history from our daily runner snapshots. DeFiLlama's TVL and stablecoin chart
+endpoints return full daily history and remain keyless.
+
+## Verification status (live-probed 2026-07-25)
 
 | source | metrics | key required | status |
 |---|---|---|---|
-| FRED | 19 | yes (`FRED_API`) | endpoint verified live; **key in the secret is malformed — see below** |
-| Zillow Research | 3 | no | ✅ all three pull real US-level data |
+| FRED | 24 | yes (`FRED_API`) | endpoint verified live; **key in the secret is malformed — see below** |
+| Zillow Research | 12 | no | ✅ national, SF city, and Tahoe basket CSVs verified |
 | Cboe | 2 (VIX fallback, put/call) | no | ✅ both working |
 | Coinbase | 2 (crypto watchlist) | no | ✅ working |
 | LBMA | 2 (gold, silver) | no | ✅ keyless daily JSON, 1968→present |
+| CoinGecko | 5 | no | ✅ keyless `/global`; snapshot history accumulates daily |
+| DeFiLlama | 2 | no | ✅ keyless full-history TVL/stablecoin chart endpoints |
 
-**The `FRED_API` secret is not a valid key** — the runner reports it as 105 characters with non-alphanumeric content, where a FRED key is exactly 32 lowercase alphanumeric. Until it's replaced with the real key, all 19 FRED metrics show `error`/`no data`. This is the one blocker only Dylan can clear.
+**The `FRED_API` secret is not a valid key** — the runner reports it as 105 characters with non-alphanumeric content, where a FRED key is exactly 32 lowercase alphanumeric. Until it's replaced with the real key, FRED metrics show `error`/`no data`. This is the one blocker only Dylan can clear.

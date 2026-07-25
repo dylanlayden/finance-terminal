@@ -1,0 +1,10 @@
+[
+  {
+    "date": "1784505600",
+    "totalCirculatingUSD": {"peggedUSD": 2200}
+  },
+  {
+    "date": "1784592000",
+    "totalCirculatingUSD": {"peggedUSD": 2400}
+  }
+]

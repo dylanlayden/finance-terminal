@@ -20,6 +20,8 @@
 dashboards:
   - id: macro
     label: Macro
+  - id: crypto
+    label: Crypto
   - id: commodities
     label: Commodities
   - id: real_estate
@@ -171,6 +173,96 @@ metrics:
     change_style: pct
     source_url: https://www.zillow.com/research/data/
 
+  - id: sf_zhvi
+    dashboard: real_estate
+    label: SF Home Value Index
+    source: zillow
+    series_id: zhvi_sf_city
+    unit: index $
+    frequency: monthly
+    change_style: pct
+    source_url: https://www.zillow.com/research/data/
+
+  - id: sf_zori
+    dashboard: real_estate
+    label: SF Observed Rent
+    source: zillow
+    series_id: zori_sf_city
+    unit: $
+    frequency: monthly
+    change_style: pct
+    source_url: https://www.zillow.com/research/data/
+
+  - id: sf_for_sale_inventory
+    dashboard: real_estate
+    label: SF For-Sale Inventory
+    source: zillow
+    series_id: inventory_sf_city
+    unit: count
+    frequency: monthly
+    change_style: pct
+    source_url: https://www.zillow.com/research/data/
+
+  - id: sf_new_listings
+    dashboard: real_estate
+    label: SF New Listings
+    source: zillow
+    series_id: new_listings_sf_city
+    unit: count
+    frequency: monthly
+    change_style: pct
+    source_url: https://www.zillow.com/research/data/
+
+  - id: sf_median_list_price
+    dashboard: real_estate
+    label: SF Median List Price
+    source: zillow
+    series_id: median_list_price_sf_city
+    unit: $
+    frequency: monthly
+    change_style: pct
+    source_url: https://www.zillow.com/research/data/
+
+  - id: sf_price_cut_pct
+    dashboard: real_estate
+    label: SF Avg Price Cut
+    source: zillow
+    series_id: price_cut_pct_sf_city
+    unit: "%"
+    frequency: monthly
+    change_style: pp
+    source_url: https://www.zillow.com/research/data/
+
+  - id: sf_days_to_pending
+    dashboard: real_estate
+    label: SF Days to Pending
+    source: zillow
+    series_id: days_to_pending_sf_city
+    unit: days
+    frequency: monthly
+    change_style: pct
+    source_url: https://www.zillow.com/research/data/
+
+  - id: sf_housing_permits
+    dashboard: real_estate
+    label: SF MSA Housing Permits
+    source: fred
+    series_id: SANF806BPPRIVSA
+    unit: count
+    frequency: monthly
+    change_style: pct
+    source_url: https://fred.stlouisfed.org/series/SANF806BPPRIVSA
+
+  - id: tahoe_zhvi_basket
+    dashboard: real_estate
+    label: Tahoe Home Value Basket
+    source: zillow
+    series_id: zhvi_tahoe_basket
+    unit: index $
+    frequency: monthly
+    change_style: pct
+    source_url: https://www.zillow.com/research/data/
+
   # --- Macro ---------------------------------------------------------------
   - id: treasury_10yr
     dashboard: macro
@@ -244,6 +336,117 @@ metrics:
     frequency: daily
     change_style: pct
     source_url: https://fred.stlouisfed.org/series/DTWEXBGS
+
+  - id: breakeven_10yr
+    dashboard: macro
+    label: 10-Yr Breakeven
+    source: fred
+    series_id: T10YIE
+    unit: "%"
+    frequency: daily
+    change_style: pp
+    source_url: https://fred.stlouisfed.org/series/T10YIE
+
+  - id: high_yield_spread
+    dashboard: macro
+    label: High Yield Spread
+    source: fred
+    series_id: BAMLH0A0HYM2
+    unit: "%"
+    frequency: daily
+    change_style: pp
+    source_url: https://fred.stlouisfed.org/series/BAMLH0A0HYM2
+
+  - id: initial_claims
+    dashboard: macro
+    label: Initial Jobless Claims
+    source: fred
+    series_id: ICSA
+    unit: count
+    frequency: weekly
+    change_style: pct
+    source_url: https://fred.stlouisfed.org/series/ICSA
+
+  - id: financial_stress
+    dashboard: macro
+    label: Financial Stress Index
+    source: fred
+    series_id: STLFSI4
+    unit: index
+    frequency: weekly
+    change_style: pct
+    source_url: https://fred.stlouisfed.org/series/STLFSI4
+
+  # --- Crypto --------------------------------------------------------------
+  - id: crypto_market_cap
+    dashboard: crypto
+    label: Total Crypto Market Cap
+    source: coingecko
+    series_id: total_market_cap_usd
+    unit: $ compact
+    frequency: daily
+    change_style: pct
+    source_url: https://www.coingecko.com/en/global-charts
+
+  - id: crypto_volume
+    dashboard: crypto
+    label: Total Crypto Volume
+    source: coingecko
+    series_id: total_volume_usd
+    unit: $ compact
+    frequency: daily
+    change_style: pct
+    source_url: https://www.coingecko.com/en/global-charts
+
+  - id: btc_dominance
+    dashboard: crypto
+    label: BTC Dominance
+    source: coingecko
+    series_id: btc_dominance
+    unit: "%"
+    frequency: daily
+    change_style: pp
+    source_url: https://www.coingecko.com/en/global-charts
+
+  - id: active_cryptoassets
+    dashboard: crypto
+    label: Active Cryptoassets
+    source: coingecko
+    series_id: active_cryptocurrencies
+    unit: count
+    frequency: daily
+    change_style: pct
+    source_url: https://www.coingecko.com/en/global-charts
+
+  - id: crypto_markets
+    dashboard: crypto
+    label: Active Crypto Markets
+    source: coingecko
+    series_id: markets
+    unit: count
+    frequency: daily
+    change_style: pct
+    source_url: https://www.coingecko.com/en/global-charts
+
+  - id: defi_tvl
+    dashboard: crypto
+    label: DeFi TVL
+    source: defillama
+    series_id: defi_tvl_usd
+    unit: $ compact
+    frequency: daily
+    change_style: pct
+    source_url: https://defillama.com/
+
+  - id: stablecoin_supply
+    dashboard: crypto
+    label: Stablecoin Supply
+    source: defillama
+    series_id: stablecoin_supply_usd
+    unit: $ compact
+    frequency: daily
+    change_style: pct
+    source_url: https://defillama.com/stablecoins
 
   # --- Equities & Options --------------------------------------------------
   - id: sp500

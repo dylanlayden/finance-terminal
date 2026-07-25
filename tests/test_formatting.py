@@ -46,6 +46,11 @@ def test_format_value_infers_from_unit(unit: str, value: float, expected: str) -
     assert format_value(value, metric(unit=unit, change_style="pct")) == expected
 
 
+def test_format_value_compacts_large_dollars() -> None:
+    assert format_value(2_283_490_133_020, metric(unit="$ compact")) == "$2.28T"
+    assert format_value(123_456_789_000, metric(unit="$ compact")) == "$123.46B"
+
+
 def test_missing_value_renders_placeholder() -> None:
     assert format_value(None, metric()) == EMPTY
 
