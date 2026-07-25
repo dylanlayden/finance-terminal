@@ -154,24 +154,41 @@ def _x_axis(window) -> alt.Axis:
 
 
 def _render_chart(reading: Reading, years: int) -> None:
-    """Full-height history chart, dated x-axis + hover — behind a click (B)."""
+    """Full-height history chart with a crosshair — hover anywhere, not just on
+    the line, and read off the date + value (behind a click, B)."""
     window = sparkline_frame(reading, years)
     if len(window) <= 1:
         st.caption("Not enough history yet — the chart fills in as data collects.")
         return
-    chart = (
-        alt.Chart(window)
-        .mark_line(color="#3d7f9e")
-        .encode(
-            x=alt.X("as_of:T", axis=_x_axis(window)),
-            y=alt.Y("value:Q", axis=alt.Axis(title=None)),
-            tooltip=[
-                alt.Tooltip("as_of:T", title="date"),
-                alt.Tooltip("value:Q", title=reading.metric.label),
-            ],
-        )
-        .properties(height=220)
+
+    x = alt.X("as_of:T", axis=_x_axis(window))
+    y = alt.Y("value:Q", axis=alt.Axis(title=None))
+    base = alt.Chart(window)
+
+    # Nearest point by x, driven from anywhere in the plot (voronoi catchment).
+    hover = alt.selection_point(
+        nearest=True, on="pointermove", fields=["as_of"], empty=False, clear="pointerout"
     )
+
+    line = base.mark_line(color="#3d7f9e").encode(x=x, y=y)
+    # Invisible full-height rules carry the interaction + tooltip across the width.
+    hit = base.mark_rule().encode(
+        x=x,
+        opacity=alt.value(0),
+        tooltip=[
+            alt.Tooltip("as_of:T", title="date"),
+            alt.Tooltip("value:Q", title=reading.metric.label, format=",.2f"),
+        ],
+    ).add_params(hover)
+    crosshair = base.mark_rule(color="#8fa3b8").encode(
+        x=x,
+        opacity=alt.condition(hover, alt.value(0.5), alt.value(0)),
+    )
+    dot = line.mark_point(color="#3d7f9e", size=55, filled=True).encode(
+        opacity=alt.condition(hover, alt.value(1), alt.value(0)),
+    )
+
+    chart = alt.layer(line, hit, crosshair, dot).properties(height=220)
     st.altair_chart(chart, use_container_width=True)
 
 
