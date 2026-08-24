@@ -1,10 +1,7 @@
 {
-  "last_attempt": "2026-08-21T22:19:47+00:00",
-  "last_success": "2026-08-21T22:19:47+00:00",
-  "failures": [
-    "gold",
-    "silver"
-  ],
-  "metrics_ok": 44,
+  "last_attempt": "2026-08-24T22:21:24+00:00",
+  "last_success": "2026-08-24T22:21:24+00:00",
+  "failures": [],
+  "metrics_ok": 46,
   "metrics_total": 46
 }
