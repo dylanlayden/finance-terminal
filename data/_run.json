@@ -1,10 +1,32 @@
 {
-  "last_attempt": "2026-10-21T00:21:59+00:00",
-  "last_success": "2026-10-21T00:21:59+00:00",
+  "last_attempt": "2026-10-22T00:24:19+00:00",
+  "last_success": "2026-10-22T00:24:19+00:00",
   "failures": [
+    "treasury_10yr",
+    "fed_funds",
+    "cpi_yoy",
+    "unemployment",
+    "real_gdp_growth",
+    "spread_2s10s",
+    "dollar_index",
+    "breakeven_10yr",
+    "high_yield_spread",
+    "initial_claims",
+    "financial_stress",
+    "wti_crude",
+    "brent_crude",
+    "henry_hub_gas",
     "gold",
-    "silver"
+    "silver",
+    "copper",
+    "gasoline_retail",
+    "fhfa_hpi",
+    "mortgage_30yr",
+    "housing_starts",
+    "sf_housing_permits",
+    "sp500",
+    "nasdaq100"
   ],
-  "metrics_ok": 44,
+  "metrics_ok": 22,
   "metrics_total": 46
 }
